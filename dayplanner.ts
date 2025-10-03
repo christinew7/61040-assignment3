@@ -14,13 +14,14 @@ export interface Activity {
  export interface Assignment {
     activity: Activity;
     startTime: number; // in half-hour slots from midnight
+    importanceWeight: number;
 }
 
 export class DayPlanner {
     private activities: Activity[] = [];
     private assignments: Assignment[] = [];
 
-    addActivity(title: string, duration: number): Activity {
+    addActivity(title: string, duration: number, startTime?: number): Activity {
         const activity: Activity = {
             title,
             duration
@@ -32,21 +33,22 @@ export class DayPlanner {
     removeActivity(activity: Activity): void {
         // Remove assignments for this activity
         this.assignments = this.assignments.filter(assignment => assignment.activity !== activity);
-        
+
         // Remove the activity
         this.activities = this.activities.filter(a => a !== activity);
     }
 
-    assignActivity(activity: Activity, startTime: number): void {
+    assignActivity(activity: Activity, startTime: number, importanceWeight: number): void {
         // Remove any existing assignment for this activity
         this.unassignActivity(activity);
-        
+
         // Create new assignment
         const assignment: Assignment = {
             activity,
-            startTime
+            startTime,
+            importanceWeight
         };
-        
+
         this.assignments.push(assignment);
     }
 
@@ -57,7 +59,7 @@ export class DayPlanner {
     async assignActivities(llm: GeminiLLM): Promise<void> {
         try {
             console.log('🤖 Requesting schedule assignments from Gemini AI...');
-            
+
             const unassignedActivities = this.activities.filter(a => !this.isAssigned(a));
 
             if (unassignedActivities.length === 0) {
@@ -69,16 +71,16 @@ export class DayPlanner {
 
             const prompt = this.createAssignmentPrompt(unassignedActivities, existingAssignments);
             const text = await llm.executeLLM(prompt);
-            
+
             console.log('✅ Received response from Gemini AI!');
             console.log('\n🤖 RAW GEMINI RESPONSE');
             console.log('======================');
             console.log(text);
             console.log('======================\n');
-            
+
             // Parse and apply the assignments
             this.parseAndApplyAssignments(text, unassignedActivities);
-            
+
         } catch (error) {
             console.error('❌ Error calling Gemini API:', (error as Error).message);
             throw error;
@@ -131,23 +133,32 @@ TIME SYSTEM:
 - There are 48 slots total (24 hours x 2)
 - Valid slots are 0-47 (midnight to 11:30 PM)
 
+IMPORTANCE WEIGHT:
+- Make your best judgment on what activities are most important
+- Slot 0 = not at all important
+- Slot 5 = very important
+- For activities of higher importance, schedule them at earlier time slots
+
 ${existingAssignmentsSection}ACTIVITIES TO SCHEDULE (ONLY THESE - DO NOT ADD OTHERS):
 ${this.activitiesToString(activities)}
 
 CRITICAL REQUIREMENTS:
 ${criticalRequirements.join('\n')}
 
-Return your response as a JSON object with this exact structure:
+Return your response as a JSON object with this exact structure. Use integers for times and weights and obey the ranges shown.
+
 {
-  "assignments": [
-    {
-      "title": "exact activity title from the list above",
-      "startTime": valid_slot_number_0_to_47
-    }
-  ]
+    "assignments": [
+        {
+            "title": "exact activity title from the list above",
+            "startTime": 0,             // integer, 0-47 (half-hour slots since midnight)
+            "importanceWeight": 3       // integer, 0-5
+        }
+    ]
 }
 
-Return ONLY the JSON object, no additional text.`;
+Return ONLY the JSON object, no additional text. Strictly enforce the integer ranges above — if you cannot satisfy them, return an empty assignments array.
+`;
 
     }
 
@@ -163,7 +174,7 @@ Return ONLY the JSON object, no additional text.`;
             }
 
             const response = JSON.parse(jsonMatch[0]);
-            
+
             if (!response.assignments || !Array.isArray(response.assignments)) {
                 throw new Error('Invalid response format');
             }
@@ -178,7 +189,7 @@ Return ONLY the JSON object, no additional text.`;
             }
 
             const issues: string[] = [];
-            const validatedAssignments: { activity: Activity; startTime: number }[] = [];
+            const validatedAssignments: { activity: Activity; startTime: number, importanceWeight: number }[] = [];
             const occupiedSlots = new Map<number, Activity>();
 
             for (const existingAssignment of this.assignments) {
@@ -193,7 +204,7 @@ Return ONLY the JSON object, no additional text.`;
                     continue;
                 }
 
-                const { title, startTime } = rawAssignment as { title?: unknown; startTime?: unknown };
+                const { title, startTime, importanceWeight } = rawAssignment as { title?: unknown; startTime?: unknown, importanceWeight?: unknown };
 
                 if (typeof title !== 'string' || title.trim().length === 0) {
                     issues.push('Assignment is missing a valid activity title.');
@@ -245,7 +256,16 @@ Return ONLY the JSON object, no additional text.`;
                     occupiedSlots.set(startTime + offset, activity);
                 }
 
-                validatedAssignments.push({ activity, startTime });
+                if (typeof importanceWeight !== 'number' || !Number.isInteger(importanceWeight)) {
+                    issues.push(`Activity "${title}" has a non-integer importance weight.`);
+                    continue;
+                }
+
+                if (importanceWeight < 0 || importanceWeight > 5) {
+                    issues.push(`Activity "${title}" has an out-of-range importance weight (${importanceWeight}).`);
+                    continue;
+                }
+                validatedAssignments.push({ activity, startTime, importanceWeight });
             }
 
             if (issues.length > 0) {
@@ -253,10 +273,10 @@ Return ONLY the JSON object, no additional text.`;
             }
 
             for (const assignment of validatedAssignments) {
-                this.assignActivity(assignment.activity, assignment.startTime);
+                this.assignActivity(assignment.activity, assignment.startTime, assignment.importanceWeight);
                 console.log(`✅ Assigned "${assignment.activity.title}" to ${this.formatTimeSlot(assignment.startTime)}`);
             }
-            
+
         } catch (error) {
             console.error('❌ Error parsing LLM response:', (error as Error).message);
             console.log('Response was:', responseText);
@@ -269,17 +289,17 @@ Return ONLY the JSON object, no additional text.`;
      */
     getSchedule(): { [timeSlot: number]: Activity[] } {
         const schedule: { [timeSlot: number]: Activity[] } = {};
-        
+
         // Initialize all possible time slots (48 half-hour slots in a day)
         for (let i = 0; i < 48; i++) {
             schedule[i] = [];
         }
-        
+
         // Walk through assignments and place activities in their time slots
         for (const assignment of this.assignments) {
             const startTime = assignment.startTime;
             const duration = assignment.activity.duration;
-            
+
             // Place the activity in all its occupied time slots
             for (let i = 0; i < duration; i++) {
                 const slot = startTime + i;
@@ -288,7 +308,7 @@ Return ONLY the JSON object, no additional text.`;
                 }
             }
         }
-        
+
         return schedule;
     }
 
@@ -302,7 +322,7 @@ Return ONLY the JSON object, no additional text.`;
         const minutes = (timeSlot % 2) * 30;
         const period = hours >= 12 ? 'PM' : 'AM';
         const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-        
+
         return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     }
 
@@ -328,23 +348,23 @@ Return ONLY the JSON object, no additional text.`;
      */
     displaySchedule(): void {
         const schedule = this.getSchedule();
-        
+
         console.log('\n📅 Daily Schedule');
         console.log('==================');
-        
+
         let hasActivities = false;
-        
+
         for (let slot = 0; slot < 48; slot++) {
             const activities = schedule[slot];
             if (activities.length > 0) {
                 hasActivities = true;
                 const timeStr = this.formatTimeSlot(slot);
-                
+
                 // Only show the start of each activity (not every half-hour)
-                const isActivityStart = activities.some(activity => 
+                const isActivityStart = activities.some(activity =>
                     this.assignments.find(a => a.activity === activity)?.startTime === slot
                 );
-                
+
                 if (isActivityStart) {
                     const uniqueActivities = [...new Set(activities)];
                     for (const activity of uniqueActivities) {
@@ -354,11 +374,11 @@ Return ONLY the JSON object, no additional text.`;
                 }
             }
         }
-        
+
         if (!hasActivities) {
             console.log('No activities scheduled yet.');
         }
-        
+
         console.log('\n📋 Unassigned Activities');
         console.log('========================');
         const unassigned = this.activities.filter(a => !this.isAssigned(a));

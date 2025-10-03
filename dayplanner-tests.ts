@@ -1,6 +1,6 @@
 /**
  * DayPlanner Test Cases
- * 
+ *
  * Demonstrates both manual scheduling and LLM-assisted scheduling
  */
 
@@ -28,9 +28,9 @@ function loadConfig(): Config {
 export async function testManualScheduling(): Promise<void> {
     console.log('\n🧪 TEST CASE 1: Manual Scheduling');
     console.log('==================================');
-    
+
     const planner = new DayPlanner();
-    
+
     // Add some activities
     console.log('📝 Adding activities...');
     const breakfast = planner.addActivity('Breakfast', 1); // 30 minutes
@@ -40,17 +40,17 @@ export async function testManualScheduling(): Promise<void> {
     const meeting = planner.addActivity('Team Meeting', 2); // 1 hour
     const dinner = planner.addActivity('Dinner', 1); // 30 minutes
     const reading = planner.addActivity('Evening Reading', 2); // 1 hour
-    
+
     // Manually assign activities to time slots
     console.log('⏰ Manually assigning activities...');
-    planner.assignActivity(breakfast, 14); // 7:00 AM
-    planner.assignActivity(workout, 16); // 8:00 AM
-    planner.assignActivity(study, 20); // 10:00 AM
-    planner.assignActivity(lunch, 26); // 1:00 PM
-    planner.assignActivity(meeting, 30); // 3:00 PM
-    planner.assignActivity(dinner, 38); // 7:00 PM
-    planner.assignActivity(reading, 42); // 9:00 PM
-    
+    planner.assignActivity(breakfast, 14, 3); // 7:00 AM
+    planner.assignActivity(workout, 16, 5); // 8:00 AM
+    planner.assignActivity(study, 20, 4); // 10:00 AM
+    planner.assignActivity(lunch, 26, 3); // 1:00 PM
+    planner.assignActivity(meeting, 30, 5); // 3:00 PM
+    planner.assignActivity(dinner, 38, 4); // 7:00 PM
+    planner.assignActivity(reading, 42, 4); // 9:00 PM
+
     // Display the schedule
     planner.displaySchedule();
 }
@@ -62,11 +62,11 @@ export async function testManualScheduling(): Promise<void> {
 export async function testLLMScheduling(): Promise<void> {
     console.log('\n🧪 TEST CASE 2: LLM-Assisted Scheduling');
     console.log('========================================');
-    
+
     const planner = new DayPlanner();
     const config = loadConfig();
     const llm = new GeminiLLM(config);
-    
+
     // Add some activities (similar to manual test but different)
     console.log('📝 Adding activities...');
     planner.addActivity('Morning Jog', 2); // 1 hour
@@ -77,14 +77,14 @@ export async function testLLMScheduling(): Promise<void> {
     planner.addActivity('Project Work', 3); // 1.5 hours
     planner.addActivity('Gym Session', 2); // 1 hour
     planner.addActivity('Movie Night', 3); // 1.5 hours
-    
+
     // Display initial state (all unassigned)
     console.log('\n📋 Initial state - all activities unassigned:');
     planner.displaySchedule();
-    
+
     // Let the LLM assign all activities
     await planner.assignActivities(llm);
-    
+
     // Display the final schedule
     console.log('\n📅 Final schedule after LLM assignment:');
     planner.displaySchedule();
@@ -97,11 +97,11 @@ export async function testLLMScheduling(): Promise<void> {
 export async function testMixedScheduling(): Promise<void> {
     console.log('\n🧪 TEST CASE 3: Mixed Scheduling');
     console.log('=================================');
-    
+
     const planner = new DayPlanner();
     const config = loadConfig();
     const llm = new GeminiLLM(config);
-    
+
     // Add activities
     console.log('📝 Adding activities...');
     const breakfast = planner.addActivity('Breakfast', 1);
@@ -111,19 +111,19 @@ export async function testMixedScheduling(): Promise<void> {
     planner.addActivity('Team Meeting', 2);
     planner.addActivity('Dinner', 1);
     planner.addActivity('Evening Reading', 2);
-    
+
     // Manually assign some activities
     console.log('⏰ Manually assigning breakfast and workout...');
-    planner.assignActivity(breakfast, 14); // 7:00 AM
-    planner.assignActivity(workout, 16); // 8:00 AM
-    
+    planner.assignActivity(breakfast, 14, 3); // 7:00 AM
+    planner.assignActivity(workout, 16, 3); // 8:00 AM
+
     // Display partial schedule
     console.log('\n📅 Partial schedule after manual assignments:');
     planner.displaySchedule();
-    
+
     // Let LLM assign the remaining activities
     await planner.assignActivities(llm);
-    
+
     // Display final schedule
     console.log('\n📅 Final schedule after LLM assignment:');
     planner.displaySchedule();
@@ -135,19 +135,19 @@ export async function testMixedScheduling(): Promise<void> {
 async function main(): Promise<void> {
     console.log('🎓 DayPlanner Test Suite');
     console.log('========================\n');
-    
+
     try {
         // Run manual scheduling test
         await testManualScheduling();
-        
+
         // Run LLM scheduling test
         await testLLMScheduling();
-        
+
         // Run mixed scheduling test
         await testMixedScheduling();
-        
+
         console.log('\n🎉 All test cases completed successfully!');
-        
+
     } catch (error) {
         console.error('❌ Test error:', (error as Error).message);
         process.exit(1);

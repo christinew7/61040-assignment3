@@ -15,17 +15,19 @@ state
         a title String
         a duration Number // in half-hour units, so 3 is 90 mins
         an optional startTime Number // in half-hour slots from midnight, so 14 is 7:00am
+        an optional importanceWeight Number
 
     a set of Assignment with
         an Activity
         an startTime Number
+        an importanceWeight Number // 0 -- not at all important <> 5 -- very important
 
     invariants
         every assignment's activity is in the activity set
         there is at most one assignment per activity
         duration and startTime are between 0 and 47
 
-actions    
+actions
     addActivity(title: String, duration: Number): Activity
         requires title is non-empty, duration is between 0 and 47
         effect adds fresh activity with title and duration and returns it
@@ -44,9 +46,9 @@ actions
         effect removes assignment for activity
 
     async assignActivities(llm: GeminiLLM)
-        effect uses llm to assign all unassigned activities    
+        effect uses llm to assign all unassigned activities
 
 notes
     This is a very rudimentary concept to demonstrate how to use an LLM.
-    
+
 </concept_spec>

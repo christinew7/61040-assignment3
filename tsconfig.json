@@ -16,18 +16,16 @@
     "sourceMap": true,
     "moduleResolution": "node"
   },
-  "include": [
-    "*.ts"
-  ],
+  "include": ["*.ts"],
   "files": [
     "dayplanner.ts",
     "gemini-llm.ts",
-    "dayplanner-tests.ts"
+    "dayplanner-tests.ts",
+    "passwordauthentication.ts",
+    "library.ts",
+    "filetracker.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
+  "exclude": ["node_modules", "dist"],
   "ts-node": {
     "esm": false,
     "experimentalSpecifierResolution": "node"

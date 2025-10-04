@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "npm run build && node dist/dayplanner-tests.js",
     "dev": "ts-node --transpile-only dayplanner-tests.ts",
-    "test": "npm run build && node dist/dayplanner-tests.js",
+    "test": "npm run build && node dist/filetracker-tests.js",
     "manual": "npm run build && node -e \"require('./dist/dayplanner-tests.js').testManualScheduling()\"",
     "llm": "npm run build && node -e \"require('./dist/dayplanner-tests.js').testLLMScheduling()\"",
     "mixed": "npm run build && node -e \"require('./dist/dayplanner-tests.js').testMixedScheduling()\""

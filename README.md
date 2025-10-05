@@ -30,11 +30,27 @@ and control how progress is displayed <br>
 - **TypeScript** (will be installed automatically)
 - **Google Gemini API Key** (free at [Google AI Studio](https://makersuite.google.com/app/apikey))
 
+## Context/Notes
+
+I felt like AI would be more limited in my other concepts (PasswordAuthentication, Dictionary (basic mapping to and from terms)). The other concept is a Library, which primarily stores files, and AI could have been used to help translate plain text into my data structure for File, but that's a backend implementation rather than something directly visible to the user. Since the users in my project will be submitting crochet patterns, the first real step of the pattern will not always be the first few lines; there could be a materials section and other miscellaneous introductions, so AI would be useful in determining where the first step is (to highlight in the frontend). I created the generic User and File type as interfaces in their respective concept files just to be able to pass it in to the `startTracking` functions.
+
+## User Interaction
+
+![](/61040-assignment3/assets/ai%20filetracking.png)
+
+![](/61040-assignment3/assets/ai%20user%20check.png)
+
+### User Journey
+
+Bobbert uploads the crochet pattern he wants to follow. Since it's just a big block of text, he'll have to manually find and click on the first instruction when the next page loads. Instead, he chooses to "Submit with LLM," which automatically finds analyzes the file to locate the first instruction for him. The LLM correctly identifies the first instruction hidden after the Materials, Tools, and Stitch Abbreviations sections. He's happy that the app can instantly highlight where he should begin after he already has the materials ready.
+
 ## Test Cases
+
+Note: Since the interface is likely to be simple and front-end heavy (visual translations and dimming/bolding feature to emphasize what step the crocheter is on), the actual UI interaction is copying and pasting the pattern to the interface and calling the LLM. The variance in scenarios stem from the different patterns that exist and if the user wants to make additional formatting.
 
 ### Test Case 1: Full Pattern with lots of miscellaneous information in the beginning
 
-There are some patterns that have a lot of miscellaneous text before the actual instruction of the pattern. In this test case, the pattern has a lot of empty lines and space in between and teaches how to crochet each stitch before getting into the pattern. The user just needs to copy and paste their pattern to the LLM, there is no change in user action. When I did this, I kept having an error that the API expected "," or "}" after after property value in JSON at position 140 (line 7 column 14). Originally, I thought there was some bug with having empty lines, but it turns out that the JSON response was just being truncated because it was too long. My original prompt had the LLM return the full trackedFile data structure, which would be too long for long patterns, so I rewrote the function to just return the currentIndex and also only passed in a truncated pattern (up to line 40), so there is less load on the LLM. I still had an error with this: it wasn't returning the correct index (it was two lines off), so I updated the range to line 50 and it worked!
+There are some patterns that have a lot of miscellaneous text before the actual instruction of the pattern. In this test case, the pattern has a lot of empty lines and space in between and teaches how to crochet each stitch before getting into the pattern. When I did this, I kept having an error that the API expected "," or "}" after after property value in JSON at position 140 (line 7 column 14). Originally, I thought there was some bug with having empty lines, but it turns out that the JSON response was just being truncated because it was too long. My original prompt had the LLM return the full trackedFile data structure, which would be too long for long patterns, so I rewrote the function to just return the currentIndex and also only passed in a truncated pattern (up to line 40), so there is less load on the LLM. I still had an error with this: it wasn't returning the correct index (it was two lines off), so I updated the range to line 50 and it worked!
 
 Prompt variant:
 In my prompt, I added a variable `analysisLines`, which slices the file's items to the first 50 items. I added to the critical requirements that it is only analyzing the first 50 items, but there are more in the original file. To the returned prompt, I added a File Preview line and passed in `analysisLines`. I also changed the returned JSON object to just return the two indices, `currentIndex` and `maxIndex`.
@@ -49,101 +65,9 @@ I tested with some patterns that might be scanned and uploaded, which might cont
 
 ## Validators
 
-Since I changed my code so the LLM returns just the indices, instead of the full TrackedFile (to minimize token count), there are a little less issues to account for. The first is the LLM just won't listen and return a non JSON output or a JSON output that is mistructured and the indices are wrapped in extra text. The second plausible issue is the currentIndex being out of bounds. It has to be within 0 and the last item in the file, maxIndex, inclusive. The third plausible issue is if the maxIndex matches the file's maxIndex; it might return 49 because I sent a shortened file when creating the prompt to minimize the tokens. This isn't as dependent on the LLM, so another plausible issue is that the indices aren't returned as numbers, and potentially the stringify-ed value of the number. 
+Since I changed my code so the LLM returns just the indices, instead of the full TrackedFile (to minimize token count), there are a little less issues to account for. The first is the LLM just won't listen and return a non JSON output or a JSON output that is mistructured and the indices are wrapped in extra text. The second plausible issue is the currentIndex being out of bounds. It has to be within 0 and the last item in the file, maxIndex, inclusive. The third plausible issue is if the maxIndex matches the file's maxIndex; it might return 49 because I sent a shortened file when creating the prompt to minimize the tokens. This isn't as dependent on the LLM, so another plausible issue is that the indices aren't returned as numbers, and potentially the stringify-ed value of the number.
 
-<!--
-## Quick Setup
-
-### 0. Clone the repo locally and navigate to it
-```cd intro-gemini-schedule```
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Add Your API Key
-
-**Why use a template?** The `config.json` file contains your private API key and should never be committed to version control. The template approach lets you:
-- Keep the template file in git (safe to share)
-- Create your own `config.json` locally (keeps your API key private)
-- Easily set up the project on any machine
-
-**Step 1:** Copy the template file:
-```bash
-cp config.json.template config.json
-```
-
-**Step 2:** Edit `config.json` and add your API key:
-```json
-{
-  "apiKey": "YOUR_GEMINI_API_KEY_HERE"
-}
-```
-
-**To get your API key:**
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the key and paste it into `config.json` (replacing `YOUR_GEMINI_API_KEY_HERE`)
-
-### 3. Run the Application
-
-**Run all test cases:**
-```bash
-npm start
-```
-
-<!-- **Run specific test cases:**
-```bash
-npm run manual    # Manual scheduling only
-npm run llm       # LLM-assisted scheduling only
-npm run mixed     # Mixed manual + LLM scheduling -->
-<!-- ```
-
-## File Structure
-
-```
-dayplanner/
-├── package.json              # Dependencies and scripts
-├── tsconfig.json             # TypeScript configuration
-├── config.json               # Your Gemini API key
-├── dayplanner-types.ts       # Core type definitions
-├── dayplanner.ts             # DayPlanner class implementation
-├── dayplanner-llm.ts         # LLM integration
-├── dayplanner-tests.ts       # Test cases and examples
-├── dist/                     # Compiled JavaScript output
-└── README.md                 # This file
-```
-
-## Test Cases
-
-The application includes three comprehensive test cases:
-
-### 1. Manual Scheduling
-Demonstrates adding activities and manually assigning them to time slots:
-
-```typescript
-const planner = new DayPlanner();
-const breakfast = planner.addActivity('Breakfast', 1); // 30 minutes
-planner.assignActivity(breakfast, 14); // 7:00 AM
-``` -->
-
-<!-- ### 2. LLM-Assisted Scheduling
-Shows AI-powered scheduling with hardwired preferences:
-
-```typescript
-const planner = new DayPlanner();
-planner.addActivity('Morning Jog', 2);
-planner.addActivity('Math Homework', 4);
-await llm.requestAssignmentsFromLLM(planner);
-```
-
-### 3. Mixed Scheduling
-Combines manual assignments with AI assistance for remaining activities.
-
-## Sample Output
+<!-- ## Sample Output
 
 ```
 Owner: alice
@@ -158,15 +82,6 @@ Instructions
 >> Foundation Chain: Ch 6, ss in 6th ch from hook to form a ring.
 Round One: Ch 3(counts as a tr here and throughout), 19 tr in ring, join with ss in top of ch- 3.
 ``` -->
-
-<!-- ## Key Features
-
-- **Simple State Management**: Activities and assignments stored in memory
-- **Flexible Time System**: Half-hour slots from midnight (0-47)
-- **Query-Based Display**: Schedule generated on-demand, not stored sorted
-- **AI Integration**: Hardwired preferences in LLM prompt (no external hints)
-- **Conflict Detection**: Prevents overlapping activities
-- **Clean Architecture**: First principles implementation with no legacy code -->
 
 <!-- ## LLM Preferences (Hardwired)
 
@@ -192,18 +107,7 @@ The AI uses these built-in preferences:
 - Use `npm run build` to compile TypeScript
 - Check that all dependencies are installed with `npm install`
 
-## Next Steps
-
-Try extending the DayPlanner:
-- Add weekly scheduling
-- Implement activity categories
-- Add location information
-- Create a web interface
-- Add conflict resolution strategies
-- Implement recurring activities
--->
-
 ## Resources
 
 - [Google Generative AI Documentation](https://ai.google.dev/docs)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/) -->

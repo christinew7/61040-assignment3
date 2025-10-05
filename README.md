@@ -36,9 +36,9 @@ I felt like AI would be more limited in my other concepts (PasswordAuthenticatio
 
 ## User Interaction
 
-![](/61040-assignment3/assets/ai%20filetracking.png)
+![](assets/ai%20filetracking.png)
 
-![](/61040-assignment3/assets/ai%20user%20check.png)
+![](assets/ai%20user%20check.png)
 
 ### User Journey
 

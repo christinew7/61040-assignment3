@@ -1,22 +1,28 @@
-# DayPlanner
-A simple day planner. This implementation focuses on the core concept of organizing activities for a single day with both manual and AI-assisted scheduling.
+# FileTracker
 
-## Concept: DayPlanner
+This implementation focuses on the core concept of initializing the progress of files with both manual and AI-assisted scheduling.
 
-**Purpose**: Help you organize activities for a single day <br>
-**Principle**: You can add activities one at a time, assign them to times, and then observe the completed schedule <br>
+## Concept: FileTracker
+
+**Purpose**: track current position and enable navigation within files <br>
+**Principle**: a user can start tracking their file from the first listed item (which might not be the first item), <br>
+a user can also use an LLM to start tracking their file at a better suited item within the file <br>
+they can move through file items sequentially without losing their place or skip to a file item <br>
+and control how progress is displayed <br>
 
 ### Core State
-- **Activities**: Set of activities with title, duration, and optional startTime <br>
-- **Assignments**: Set of activity-to-time assignments <br>
-- **Time System**: All times in half-hour slots starting at midnight (0 = 12:00 AM, 13 = 6:30 AM) <br>
+
+- **TrackedFiles**: Set of TrackedFiles with owner, file, currentIndex, maxIndex, isVisible <br>
 
 ### Core Actions
-- `addActivity(title: string, duration: number): Activity`
-- `removeActivity(activity: Activity)`
-- `assignActivity(activity: Activity, startTime: number)`
-- `unassignActivity(activity: Activity)`
-- `requestAssignmentsFromLLM()` - AI-assisted scheduling with hardwired preferences
+
+- `startTracking(owner: User, file: File)`
+- `startTracking(owner: User, file: File, llm: GeminiLLM)` - AI assisted tracking
+- `deleteTracking(owner: User, file: File)`
+- `jumpTo(owner: User, file: File, index: Number)`
+- `back(owner: User, file: File)`
+- `getCurrentItem(owner: User, file: File): (index: Number)`
+- `setVisibility(owner: User, file: File, visible: Flag)`
 
 ## Prerequisites
 
@@ -26,8 +32,21 @@ A simple day planner. This implementation focuses on the core concept of organiz
 
 ## Test Cases
 
-### Test Case 1: Empty lines
-Scenario: There are some patterns that will copy and paste empty text, so some items in the file will be an empty "". 
+### Test Case 1: Full Pattern with lots of miscellaneous information in the beginning
+
+There are some patterns that have a lot of miscellaneous text before the actual instruction of the pattern. In this test case, the pattern has a lot of empty lines and space in between and teaches how to crochet each stitch before getting into the pattern. The user just needs to copy and paste their pattern to the LLM, there is no change in user action. When I did this, I kept having an error that the API expected "," or "}" after after property value in JSON at position 140 (line 7 column 14). Originally, I thought there was some bug with having empty lines, but it turns out that the JSON response was just being truncated because it was too long. My original prompt had the LLM return the full trackedFile data structure, which would be too long for long patterns, so I rewrote the function to just return the currentIndex and also only passed in a truncated pattern (up to line 40), so there is less load on the LLM. I still had an error with this: it wasn't returning the correct index (it was two lines off), so I updated the range to line 50 and it worked!
+
+Prompt variant:
+In my prompt, I added a variable `analysisLines`, which slices the file's items to the first 50 items. I added to the critical requirements that it is only analyzing the first 50 items, but there are more in the original file. To the returned prompt, I added a File Preview line and passed in `analysisLines`. I also changed the returned JSON object to just return the two indices, `currentIndex` and `maxIndex`.
+
+### Test Case 2: Tutorials before the real pattern
+I originally tested with emojis as the numbering guide for patterns, and this worked. It even worked if I had duplicate numbering with two 1️⃣ a few lines apart. However, when I added a "subtitle" to a tutorial section, the LLM broke and highlighted the subtitle (returned the index of the subtitle), not even the first instruction of the tutorial. In the prompt, I added a `potentialSections` array of common potential section titles so the LLM knows to ignore these as the start of the pattern. This worked in skipping the tutorial section, but it started highlighting the 'body' subtitle, which was the start of the real pattern. In the prompt, I specified to "Find the index of the first instruction, NOT the index of the section title, some of which are defined below." I also moved the line that feeds the `potentialSections` to be right below this new line. This gets the instruction right half of the time, and the other half, it goes to the first instruction of the tutorial section.  I added a new line specifying tutorial instructions should be ignored: "Ignore any instructional steps for the basic or tutorial stitches, like single crochet, double crochet, magic ring."
+
+<!-- "I tested a pattern that has different variations of numbering patterns (Roman Numerals (2a) and using Emojis (2b)). -->
+
+### Test Case 2: Full Pattern with Many Sections
+
+<!-- I ADDED SECTION POTENTIALS -->
 
 <!--
 ## Quick Setup

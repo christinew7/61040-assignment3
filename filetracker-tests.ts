@@ -164,6 +164,25 @@ const file4: File = {
     dateAdded: new Date()
 };
 
+const file5: File = {
+    items: ["🧶 Materials 🧶",
+        "🧶 Yarn: DK weight yarn – Samples feature Paintbox Simply Aran, 100% Cotton Tea Rose (643) Pale Lilac (646) Bubblegum Pink (651)",
+        "🪛 Tools 🪡",
+        "Hook: 4mm",
+        "Darning Needle",
+        "Scissors",
+        "",
+        "Single crochet",
+        "1️⃣ Insert hook from front to back in the second chain from the hook or designated stitch",
+        "2️⃣ Bring the yarn over (yo) the hook and pull the yarn back through the chain (or stitch)  from back to front  (2 loops on hook).",
+        "3️⃣ Yo and pull through both loops on the hook.",
+        "Body",
+        "1️⃣ Ch 6, ss in 6th ch from hook to form a ring.",
+        "2️⃣ Ch 3(counts as a tr here and throughout), 19 tr in ring, join with ss in top of ch- 3."
+    ],
+    dateAdded: new Date()
+}
+
 /**
  * Basic test case 1: Manual tracking
  * Demonstrates adding a new file to track and defaulting the currentIndex to the first item
@@ -233,6 +252,20 @@ export async function testWithMisc(): Promise<void> {
     fileTracker.displayTrackedFiles();
 }
 
+export async function testWithEmoji(): Promise<void> {
+    console.log('\n🧪 TEST CASE 2: Test with emojis as numbering system');
+    console.log('=================================');
+
+    const fileTracker = new FileTracker();
+
+    const config = loadConfig();
+    const llm = new GeminiLLM(config);
+
+    await fileTracker.startTrackingUsingLLM(alice, file5, llm);
+
+    fileTracker.displayTrackedFiles();
+}
+
 /**
  * Main function to run all test cases
  */
@@ -248,6 +281,8 @@ async function main(): Promise<void> {
         // await testMixedTracking();
 
         await testWithMisc();
+
+        await testWithEmoji();
 
         console.log('\n🎉 All test cases completed successfully!');
 

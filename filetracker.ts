@@ -128,12 +128,12 @@ export class FileTracker {
      * Create the prompt for Gemini with hardwired preferences
      */
     private createTrackingPrompt(file: File): string {
-        const analysisLines = file.items.slice(0, 60);
+        const analysisLines = file.items.slice(0, 50);
 
         const criticalRequirements = [
             "1. The currentIndex MUST be between 0 and maxIndex (INCLUSIVE)",
-            "2. You are only analyzing the first 60 lines, but your current index should reference the ORIGINAL full file",
-            `3. The actual file has ${file.items.length} total lines, but you only see the first 40 for analysis`
+            "2. You are only analyzing the first 50 lines, but your current index should reference the ORIGINAL full file",
+            `3. The actual file has ${file.items.length} total lines, but you only see the first 50 for analysis`
         ]
 
         const potentialSections = [
@@ -144,27 +144,33 @@ export class FileTracker {
             "Gauge",
             "Stitch Terms",
             "Tools",
+            "Single crochet",
+            "Double crochet",
+            "Body",
+            "Head",
         ]
 
         return `
 You are a helpful AI assistant that finds the best tracking index of a file for crocheters.
 
-I'm providing you with the FIRST 60 LINES of a crochet pattern file for analysis.
+I'm providing you with the FIRST 50 LINES of a crochet pattern file for analysis.
 The full file has ${file.items.length} total lines.
 
 The file will be passed as a list of line entries, where the first couple of sections are NOT instructions.
-There will be a MATERIALS section and optionally, other potential sections listed below.
+There will be a MATERIALS section and optionally, other potential sections listed below. The sections are case-INsensitive.
 Then, there will be the instructions section, which can include multiple subsections.
-You are to provide the index at the first instruction of the section. This may be marked by "1.", but it might not include the line item.
+You are to provide the index at the first instruction of the main pattern section. This may be marked by "1.", but it might not include the line item.
+Ignore any instructional steps for the basic or tutorial stitches, like single crochet, double crochet, magic ring.
+Find the index of the first instruction, NOT the index of the section title, some of which are defined below.
 
-FILE PREVIEW (first 60 lines):
+POTENTIAL SECTIONS:
+${potentialSections.join('\n')}
+
+FILE PREVIEW (first 50 lines):
 ${analysisLines.map((line, index) => `[${index}]: ${line}`).join('\n')}
 
 CRITICAL REQUIREMENTS:
 ${criticalRequirements.join('\n')}
-
-POTENTIAL SECTIONS:
-${potentialSections.join('\n')}
 
 Return your response as a JSON object with this exact structure. Use integers and obey the ranges shown.
 

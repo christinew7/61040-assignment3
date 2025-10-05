@@ -183,6 +183,55 @@ const file5: File = {
     dateAdded: new Date()
 }
 
+const file6: File = {
+    // items: [
+    //     "CROCHET-A-LONG WEEK 1",
+    //     "",
+    //     "VIDEO TUTORIAL AVAILABLE: youtu.be/example",
+    //     "",
+    //     "WRITTEN PATTERN:",
+    //     "Skill Level: Beginner",
+    //     "",
+    //     "STITCH GUIDE:",
+    //     "SC = Single Crochet",
+    //     "DC = Double Crochet",
+    //     "CH = Chain",
+    //     "",
+    //     "WEEK 1 - PART A:",
+    //     "Step 1: Make a slip knot",
+    //     "Step 2: Chain 50 stitches",
+    //     "Step 3: Single crochet in 2nd chain from hook",
+    //     "",
+    //     "WATCH THE VIDEO if you're confused!",
+    //     "",
+    //     "TEXT-ONLY VERSION:",
+    //     "Foundation: ch 50",
+    //     "Row 1: sc in 2nd ch from hook and each ch across (49)",
+    //     "Row 2: ch 1, turn, sc in each st across",
+    //     "",
+    //     "Continue until we meet next week for Part B!"
+    // ],
+    items: [
+        "vintage  pattern   from  1978",
+        "",
+        "materia1s :",  // OCR error
+        "— worsted yarn",  // Strange character
+        "- size H hook",
+        "",
+        "specia1 stitches :",  // OCR error
+        "dc = double crochet",
+        "",
+        "instructions :",
+        "ohain l5O",  // OCR error - "chain 150"
+        "row l: dc in 4th ch from hook",  // OCR error - "row 1"
+        "and eaoh oh across",  // OCR error - "and each ch across"
+        "",
+        "row 2: oh 3, turn, dc in ea st",  // Multiple OCR errors
+        "across"
+    ],
+    dateAdded: new Date()
+}
+
 /**
  * Basic test case 1: Manual tracking
  * Demonstrates adding a new file to track and defaulting the currentIndex to the first item
@@ -252,8 +301,8 @@ export async function testWithMisc(): Promise<void> {
     fileTracker.displayTrackedFiles();
 }
 
-export async function testWithEmoji(): Promise<void> {
-    console.log('\n🧪 TEST CASE 2: Test with emojis as numbering system');
+export async function testWithSections(): Promise<void> {
+    console.log('\n🧪 TEST CASE 2: Test with instruction sections');
     console.log('=================================');
 
     const fileTracker = new FileTracker();
@@ -262,6 +311,20 @@ export async function testWithEmoji(): Promise<void> {
     const llm = new GeminiLLM(config);
 
     await fileTracker.startTrackingUsingLLM(alice, file5, llm);
+
+    fileTracker.displayTrackedFiles();
+}
+
+export async function testWithTypos(): Promise<void> {
+console.log('\n🧪 TEST CASE 2: Test with instruction sections');
+    console.log('=================================');
+
+    const fileTracker = new FileTracker();
+
+    const config = loadConfig();
+    const llm = new GeminiLLM(config);
+
+    await fileTracker.startTrackingUsingLLM(alice, file6, llm);
 
     fileTracker.displayTrackedFiles();
 }
@@ -282,7 +345,9 @@ async function main(): Promise<void> {
 
         await testWithMisc();
 
-        await testWithEmoji();
+        await testWithSections();
+
+        await testWithTypos();
 
         console.log('\n🎉 All test cases completed successfully!');
 

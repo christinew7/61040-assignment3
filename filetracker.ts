@@ -150,10 +150,23 @@ export class FileTracker {
             "Head",
         ]
 
+        const commonOCRErrors = [
+            "'ohain' -> 'chain'",
+            "'row l' -> 'row 1'",
+            "'eaoh' -> 'each'",
+            "'materia1s' -> 'materials'",
+            "'0' -> 'O'",
+            "'5' -> 'S'",
+        ]
+
         return `
 You are a helpful AI assistant that finds the best tracking index of a file for crocheters.
 
 I'm providing you with the FIRST 50 LINES of a crochet pattern file for analysis.
+This may contain OCR errors from scanning. Be flexible in recognizing instructions despite character recognition issues.
+POTENTIAL OCR ERRORS
+${commonOCRErrors.join('\n')}
+
 The full file has ${file.items.length} total lines.
 
 The file will be passed as a list of line entries, where the first couple of sections are NOT instructions.
@@ -196,18 +209,38 @@ Return ONLY the JSON object, no additional text. Strictly enforce the integer ra
 
             const indices = JSON.parse(jsonMatch[0]);
 
+            const issues: string[] = [];
+
             if (!indices) {
-                throw new Error('Invalid response format');
+                issues.push(`Invalid response format: ${indices}`);
             }
 
             console.log('📝 Applying LLM Tracking...');
 
-            const issues: string[] = [];
+            // checking format
+            if (!indices.currentIndex) {
+                issues.push(`Invalid response, there is no currentIndex passed in.`);
+            }
+            if (!indices.maxIndex) {
+                issues.push(`Invalid response, there is no maxIndex passed in.`);
+            }
 
-            // console.log(response);
+            // checking bounds
+            if (indices.currentIndex < 0 || indices.currentIndex > indices.maxIndex) {
+                issues.push(`currentIndex ${indices.currentIndex} is out of bounds`);
+            }
+            if (indices.maxIndex !== file.items.length - 1) {
+                issues.push(`maxIndex ${indices.maxIndex} is not correct`);
+            }
 
-            // const indices = response.trackedFile[0];
-            console.log("indices", indices);
+            // checking type
+            if (typeof indices.currentIndex !== "number") {
+                issues.push(`currentIndex ${indices.currentIndex} is not a number`);
+            }
+            if (typeof indices.maxIndex !== "number") {
+                issues.push(`maxIndex ${indices.maxIndex} is not a number`);
+            }
+
 
             const trackedFile: TrackedFile = {
                 owner: owner,

@@ -1,13 +1,11 @@
 /**
- * DayPlanner Test Cases
+ * FileTracker Test Cases
  *
- * Demonstrates both manual scheduling and LLM-assisted scheduling
+ * Demonstrates both LLM-assisted file tracking
  */
 
-import { DayPlanner } from './dayplanner';
 import { GeminiLLM, Config } from './gemini-llm';
 import { FileTracker } from './filetracker';
-import { TrackedFile } from './filetracker';
 import { User } from './passwordauthentication';
 import { File } from './library';
 
@@ -232,6 +230,50 @@ const file6: File = {
     dateAdded: new Date()
 }
 
+export async function testWithMisc(): Promise<void> {
+    console.log('\n🧪 TEST CASE 1: Test with lots miscellaneous comments and prep instructions before');
+    console.log('=================================');
+
+    const fileTracker = new FileTracker();
+
+    const config = loadConfig();
+    const llm = new GeminiLLM(config);
+
+    await fileTracker.startTrackingUsingLLM(alice, file3, llm);
+
+    fileTracker.displayTrackedFiles();
+}
+
+export async function testWithSections(): Promise<void> {
+    console.log('\n🧪 TEST CASE 2: Test with instruction sections');
+    console.log('=================================');
+
+    const fileTracker = new FileTracker();
+
+    const config = loadConfig();
+    const llm = new GeminiLLM(config);
+
+    await fileTracker.startTrackingUsingLLM(alice, file5, llm);
+
+    fileTracker.displayTrackedFiles();
+}
+
+export async function testWithTypos(): Promise<void> {
+console.log('\n🧪 TEST CASE 2: Test with instruction sections');
+    console.log('=================================');
+
+    const fileTracker = new FileTracker();
+
+    const config = loadConfig();
+    const llm = new GeminiLLM(config);
+
+    await fileTracker.startTrackingUsingLLM(alice, file6, llm);
+
+    fileTracker.displayTrackedFiles();
+}
+
+// ---------- OLDER BASIC TEST CASES ------------
+
 /**
  * Basic test case 1: Manual tracking
  * Demonstrates adding a new file to track and defaulting the currentIndex to the first item
@@ -287,47 +329,9 @@ export async function testMixedTracking(): Promise<void> {
     fileTracker.displayTrackedFiles();
 }
 
-export async function testWithMisc(): Promise<void> {
-    console.log('\n🧪 TEST CASE 1: Test with lots miscellaneous comments and prep instructions before');
-    console.log('=================================');
-
-    const fileTracker = new FileTracker();
-
-    const config = loadConfig();
-    const llm = new GeminiLLM(config);
-
-    await fileTracker.startTrackingUsingLLM(alice, file3, llm);
-
-    fileTracker.displayTrackedFiles();
-}
-
-export async function testWithSections(): Promise<void> {
-    console.log('\n🧪 TEST CASE 2: Test with instruction sections');
-    console.log('=================================');
-
-    const fileTracker = new FileTracker();
-
-    const config = loadConfig();
-    const llm = new GeminiLLM(config);
-
-    await fileTracker.startTrackingUsingLLM(alice, file5, llm);
-
-    fileTracker.displayTrackedFiles();
-}
-
-export async function testWithTypos(): Promise<void> {
-console.log('\n🧪 TEST CASE 2: Test with instruction sections');
-    console.log('=================================');
-
-    const fileTracker = new FileTracker();
-
-    const config = loadConfig();
-    const llm = new GeminiLLM(config);
-
-    await fileTracker.startTrackingUsingLLM(alice, file6, llm);
-
-    fileTracker.displayTrackedFiles();
-}
+// ----------------------------------------------
+// -------- ^ OLDER BASIC TEST CASES ^ ----------
+// ----------------------------------------------
 
 /**
  * Main function to run all test cases

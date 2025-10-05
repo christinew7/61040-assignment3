@@ -50,24 +50,24 @@ Note: Since the interface is likely to be simple and front-end heavy (visual tra
 
 ### Test Case 1: Full Pattern with lots of miscellaneous information in the beginning
 
-There are some patterns that have a lot of miscellaneous text before the actual instruction of the pattern. In this test case, the pattern has a lot of empty lines and space in between and teaches how to crochet each stitch before getting into the pattern. When I did this, I kept having an error that the API expected "," or "}" after after property value in JSON at position 140 (line 7 column 14). Originally, I thought there was some bug with having empty lines, but it turns out that the JSON response was just being truncated because it was too long. My original prompt had the LLM return the full trackedFile data structure, which would be too long for long patterns, so I rewrote the function to just return the currentIndex and also only passed in a truncated pattern (up to line 40), so there is less load on the LLM. I still had an error with this: it wasn't returning the correct index (it was two lines off), so I updated the range to line 50 and it worked!
+There are some patterns that have a lot of miscellaneous text before the actual instruction of the pattern. In this test case, the pattern has a lot of empty lines and space in between and teaches how to crochet each stitch before getting into the pattern. When I did this, I kept having an error that the API expected "," or "}" after after property value in JSON at position 140 (line 7 column 14). Originally, I thought there was some bug with having empty lines, but it turns out that the JSON response was just being truncated because it was too long. My original prompt had the LLM return the full trackedFile data structure, which would be too long for long patterns, so I rewrote the function to just return the currentIndex and also only passed in a truncated pattern (up to line 40), so there is less load on the LLM. I still had an error with this: it wasn't returning the correct index (it was two lines off), so I updated the range to line 50 and it worked! An issue is if the first instruction doesn't exist until after line 50, which would give the wrong index, but this is usually rare.
 
 Prompt variant:
 In my prompt, I added a variable `analysisLines`, which slices the file's items to the first 50 items. I added to the critical requirements that it is only analyzing the first 50 items, but there are more in the original file. To the returned prompt, I added a File Preview line and passed in `analysisLines`. I also changed the returned JSON object to just return the two indices, `currentIndex` and `maxIndex`.
 
 ### Test Case 2: Tutorials before the real pattern
 
-I originally tested with emojis as the numbering guide for patterns, and this worked. It even worked if I had duplicate numbering with two 1️⃣ a few lines apart. However, when I added a "subtitle" to a tutorial section, the LLM broke and highlighted the subtitle (returned the index of the subtitle), not even the first instruction of the tutorial. In the prompt, I added a `potentialSections` array of common potential section titles so the LLM knows to ignore these as the start of the pattern. This worked in skipping the tutorial section, but it started highlighting the 'body' subtitle, which was the start of the real pattern. In the prompt, I specified to "Find the index of the first instruction, NOT the index of the section title, some of which are defined below." I also moved the line that feeds the `potentialSections` to be right below this new line. This gets the instruction right half of the time, and the other half, it goes to the first instruction of the tutorial section. I added a new line specifying tutorial instructions should be ignored: "Ignore any instructional steps for the basic or tutorial stitches, like single crochet, double crochet, magic ring."
+I originally tested with emojis as the numbering guide for patterns, and this worked. It even worked if I had duplicate numbering with two 1️⃣ a few lines apart. However, when I added a "subtitle" to a tutorial section, the LLM broke and highlighted the subtitle (returned the index of the subtitle), not even the first instruction of the tutorial. This scenario would occur when a user pastes in a pattern that is very beginner friendly, so the pattern writer includes a mini tutorial for every stitch that they make in the actual pattern; these tutorials aren't the first step, but just a reference to make the stitch when it comes up in the pattern. In the prompt, I added a `potentialSections` array of common potential section titles so the LLM knows to ignore these as the start of the pattern. This worked in skipping the tutorial section, but it started highlighting the 'body' subtitle, which was the start of the real pattern. In the prompt, I specified to "Find the index of the first instruction, NOT the index of the section title, some of which are defined below." I also moved the line that feeds the `potentialSections` to be right below this new line. This gets the instruction right half of the time, and the other half, it goes to the first instruction of the tutorial section. I added a new line specifying tutorial instructions should be ignored: "Ignore any instructional steps for the basic or tutorial stitches, like single crochet, double crochet, magic ring." There might still be some errors in the LLM properly determining if a pattern line is for a tutorial or the actual pattern.
 
 ### Test Case 3:
 
-I tested with some patterns that might be scanned and uploaded, which might contain (Optical Character Recognition) OCR errors. The LLM worked in getting an index at the instructions section, but skipped a step. So, I added to the prompt a line about OCR errors and a `commonOCRErrors` array that maps errors to the word it is supposed to represent. (Prompt addition: This may contain OCR errors from scanning. Be flexible in recognizing instructions despite character recognition issues.) This immediately helped with highlighting the first instruction.
+A crocheter finds a pattern on a book they borrowed from the library. They decide to scan the pattern and upload it to the app. It contains Optical Character Recognition (OCR) errors, and the crocheter is too lazy to change all of the words; they're primarily using the app for its row-tracking feature. So, they upload the pattern with the OCR errors. The LLM worked in getting an index at the instructions section, but skipped a step. So, I added to the prompt a line about OCR errors and a `commonOCRErrors` array that maps errors to the word it is supposed to represent. (Prompt addition: "This may contain OCR errors from scanning. Be flexible in recognizing instructions despite character recognition issues.") This immediately helped with highlighting the first instruction. A trade-off in this, without forcing the user to fix the typos is that they won't be able to use the translation or abbreviation tools because it can't translate typos.
 
 ## Validators
 
 Since I changed my code so the LLM returns just the indices, instead of the full TrackedFile (to minimize token count), there are a little less issues to account for. The first is the LLM just won't listen and return a non JSON output or a JSON output that is mistructured and the indices are wrapped in extra text. The second plausible issue is the currentIndex being out of bounds. It has to be within 0 and the last item in the file, maxIndex, inclusive. The third plausible issue is if the maxIndex matches the file's maxIndex; it might return 49 because I sent a shortened file when creating the prompt to minimize the tokens. This isn't as dependent on the LLM, so another plausible issue is that the indices aren't returned as numbers, and potentially the stringify-ed value of the number.
 
-<!-- ## Sample Output
+## Sample Output
 
 ```
 Owner: alice
@@ -81,7 +81,7 @@ Scissors
 Instructions
 >> Foundation Chain: Ch 6, ss in 6th ch from hook to form a ring.
 Round One: Ch 3(counts as a tr here and throughout), 19 tr in ring, join with ss in top of ch- 3.
-``` -->
+```
 
 <!-- ## LLM Preferences (Hardwired)
 
@@ -92,7 +92,7 @@ The AI uses these built-in preferences:
 - Social/Relaxation: Evenings (6:00 PM - 10:00 PM)
 - Avoid: Demanding activities after 10:00 PM -->
 
-<!-- ## Troubleshooting
+## Troubleshooting
 
 ### "Could not load config.json"
 - Ensure `config.json` exists with your API key
@@ -110,4 +110,4 @@ The AI uses these built-in preferences:
 ## Resources
 
 - [Google Generative AI Documentation](https://ai.google.dev/docs)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/) -->
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)

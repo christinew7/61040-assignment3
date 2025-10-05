@@ -18,7 +18,7 @@ export interface TrackedFile {
 export class FileTracker {
     private trackedFiles: TrackedFile[] = [];
 
-    startTracking(owner: User, file: File) {
+    startTracking(owner: User, file: File): void {
         const findingTrackedFile = this.trackedFiles.find(tf => tf.owner === owner && tf.file === file);
 
         if (findingTrackedFile) {
@@ -33,11 +33,7 @@ export class FileTracker {
             isVisible: true,
         }
         this.trackedFiles.push(trackedFile);
-        // return trackedFile
     }
-
-    // NEED TO DO TRACKING WITH LLM
-
 
     deleteTracking(owner: User, file: File): void {
         this.trackedFiles = this.trackedFiles.filter(trackedFile => trackedFile.file !== file && trackedFile.owner !== owner);

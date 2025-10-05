@@ -9,8 +9,8 @@
     "dev": "ts-node --transpile-only filetracker-tests.ts",
     "test": "npm run build && node dist/filetracker-tests.js"
   },
-  "keywords": ["gemini", "ai", "schedule", "student", "demo", "typescript"],
-  "author": "Student Demo",
+  "keywords": ["gemini", "ai", "schedule", "student", "typescript"],
+  "author": "Christine Wu",
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.21.0"

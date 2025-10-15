@@ -26,7 +26,7 @@ actions
         requires this owner exists, this file exists, this owner and this file isn't already in the set of TrackedFiles
         effect create a new TrackedFile with this owner and this file, currentIndex is initialized to 0, maxIndex is the length of the file's items, isVisible set to true
 
-    startTracking(owner: User, file: File, llm: GeminiLLM)
+    startTrackingUsingLLM(owner: User, file: File, llm: GeminiLLM)
         requires this owner exists, this file exists, this owner and this file isn't already in the set of TrackedFiles
         effect uses this llm to determine a more accurate startIndex for the file
 
@@ -53,8 +53,5 @@ actions
     setVisibility(owner: User, file: File, visible: Flag)
         requires this owner and this file exists in the TrackedFiles
         effect in the TrackedFile with this owner and this file, set isVisible to this visible
-
-notes
-    This is a very rudimentary concept to demonstrate how to use an LLM.
 
 </concept_spec>

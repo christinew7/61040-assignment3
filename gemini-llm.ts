@@ -1,6 +1,6 @@
 /**
- * LLM Integration for DayPlanner
- * 
+ * LLM Integration for FileTracker
+ *
  * Handles the requestAssignmentsFromLLM functionality using Google's Gemini API.
  * The LLM prompt is hardwired with user preferences and doesn't take external hints.
  */
@@ -25,7 +25,7 @@ export class GeminiLLM {
         try {
             // Initialize Gemini AI
             const genAI = new GoogleGenerativeAI(this.apiKey);
-            const model = genAI.getGenerativeModel({ 
+            const model = genAI.getGenerativeModel({
                 model: "gemini-2.5-flash-lite",
                 generationConfig: {
                     maxOutputTokens: 1000,
@@ -35,7 +35,7 @@ export class GeminiLLM {
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
-            return text;            
+            return text;
         } catch (error) {
             console.error('❌ Error calling Gemini API:', (error as Error).message);
             throw error;

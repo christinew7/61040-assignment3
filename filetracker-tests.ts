@@ -259,7 +259,7 @@ export async function testWithSections(): Promise<void> {
 }
 
 export async function testWithTypos(): Promise<void> {
-console.log('\n🧪 TEST CASE 2: Test with instruction sections');
+    console.log('\n🧪 TEST CASE 3: Test with Typos');
     console.log('=================================');
 
     const fileTracker = new FileTracker();
